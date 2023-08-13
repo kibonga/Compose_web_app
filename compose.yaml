@@ -1,0 +1,83 @@
+services:
+  db:
+    container_name: db_kimur_container
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment: 
+      SA_PASSWORD: "Kibong@123"
+      ACCEPT_EULA: "Y"
+    ports: 
+      - "1433:1433"
+    volumes:
+      - kimur_data:/var/opt/db_kimur_container
+    networks:
+      - kimur_network
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S db -U sa -P "$$SA_PASSWORD" -Q "SELECT 1" || exit 1 
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  migrations:
+    container_name: migrations_kimur_container
+    image: migrations_kimur_container
+    build:
+      context: ./Docker.Backend_app
+      dockerfile: Dockerfile.migrations
+    networks:
+      - kimur_network
+    depends_on: 
+      db: 
+        condition: "service_healthy"
+  backend:
+    image: be_kimur_img
+    container_name: be_kimur_container
+    build: 
+      context: ./Docker.Backend_app
+      dockerfile: Dockerfile.backend
+    ports:
+      - "5000:80"
+    networks:
+      - kimur_network
+    healthcheck:
+      test: "curl -f backend/api/Healthcheck || exit 1"
+      interval: 5s
+      retries: 3
+    depends_on:
+      migrations:
+        condition: "service_completed_successfully"
+    profiles: ["be", "full", "no-seed"]
+  seed:
+    container_name: seed_kimur_container
+    build:
+      context: ./Docker.Backend_app
+      dockerfile: Dockerfile.seed
+    command: "curl -f backend/api/Seed"
+    depends_on:
+      migrations:
+        condition: "service_completed_successfully"
+      backend:
+        condition: "service_healthy"
+    networks:
+      - kimur_network
+    profiles: ["be", "full"]
+  frontend: 
+    image: fe_kimur_img
+    container_name: fe_kimur_container
+    build: 
+      context: ./Docker.Frontend_app
+      dockerfile: Dockerfile.frontend
+    ports: 
+      - "4200:80"
+    networks:
+      - kimur_network
+    depends_on:
+      backend:
+        condition: "service_healthy"
+      migrations:
+        condition: "service_completed_successfully"        
+    profiles: ["fe", "full", "no-seed"]
+
+networks:
+  kimur_network:
+
+volumes:
+  kimur_data:

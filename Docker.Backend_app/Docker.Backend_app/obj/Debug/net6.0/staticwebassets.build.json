@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "nBiAJ3tWJWOP5TQjYxLAcrvx9wiurkp3edteTovPaj0=",
+  "Source": "Docker.Backend_app",
+  "BasePath": "_content/Docker.Backend_app",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

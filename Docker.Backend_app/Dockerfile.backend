@@ -1,0 +1,27 @@
+#See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
+
+FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
+WORKDIR /app
+EXPOSE 80
+
+# install curl, this will be used for healthcheck
+RUN apt-get update \
+    && apt-get install -y curl \
+    && rm -rf /var/cache/apt/archives/
+
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+WORKDIR /src
+COPY ["Docker.Backend_app/Docker.Backend_app.csproj", "Docker.Backend_app/"]
+RUN dotnet restore "Docker.Backend_app/Docker.Backend_app.csproj"
+COPY . .
+WORKDIR /src/Docker.Backend_app
+RUN dotnet build "Docker.Backend_app.csproj" -c Release -o /app/build
+
+FROM build AS publish
+WORKDIR /src/Docker.Backend_app
+RUN dotnet publish "Docker.Backend_app.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "Docker.Backend_app.dll"]

@@ -1,0 +1,9 @@
+FROM mcr.microsoft.com/dotnet/sdk:6.0
+WORKDIR /src
+COPY ["Docker.Backend_app/Docker.Backend_app.csproj", "Docker.Backend_app/"]
+RUN dotnet restore "Docker.Backend_app/Docker.Backend_app.csproj"
+COPY . .
+WORKDIR /src/Docker.Backend_app
+RUN dotnet tool install --global dotnet-ef
+ENV PATH=$PATH:/root/.dotnet/tools
+ENTRYPOINT ["dotnet-ef", "database", "update"]

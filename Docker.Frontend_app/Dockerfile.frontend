@@ -1,0 +1,29 @@
+FROM node:latest as build
+
+# set working dir
+WORKDIR /app 
+
+RUN apt-get update \
+    && apt-get install -y curl \
+    && rm -rf /var/cache/apt/archives/
+
+# copy package.json and package-lock.json to workdir
+COPY package*.json ./
+
+# install the app dependencies
+RUN npm install
+
+# copy the rest of the app code to the container
+COPY . .
+
+# build the angular app
+RUN npm run build
+
+# use a lightweight HTTP server to serve the built app
+FROM nginx:alpine as runtime
+
+# copy the built app from "build" to nginx pubic dir
+COPY --from=build /app/dist/kimur_app /usr/share/nginx/html
+
+# expose port
+EXPOSE 80
